@@ -219,7 +219,6 @@ class Strategy:
         res = self.exchange.privatePostOrderClosePosition(req)
         self.logger.info("CLOSE: {orderID} {side} {orderQty} {price}".format(**res))
 
-    @excahge_error
     def cancel(self, myid):
         """注文をキャンセル"""
         if myid in self.orders:
@@ -228,6 +227,8 @@ class Strategy:
                 res = self.exchange.cancel_order(order_id)
                 self.logger.info("CANCEL: {orderID} {side} {orderQty} {price}".format(**res['info']))
             except ccxt.OrderNotFound as e:
+                self.logger.warning(type(e).__name__ + ": {0}".format(e))
+            except ccxt.NotFound as e:
                 self.logger.warning(type(e).__name__ + ": {0}".format(e))
             del self.orders[myid]
 
@@ -510,7 +511,7 @@ class Strategy:
 
             except ccxt.DDoSProtection as e:
                 self.logger.warning(type(e).__name__ + ": {0}".format(e))
-                errorWait = 5
+                errorWait = 30
             except ccxt.RequestTimeout as e:
                 self.logger.warning(type(e).__name__ + ": {0}".format(e))
                 errorWait = 5
@@ -522,13 +523,13 @@ class Strategy:
                 break
             except ccxt.ExchangeError as e:
                 self.logger.warning(type(e).__name__ + ": {0}".format(e))
-                errorWait = 1
+                errorWait = 5
             except (KeyboardInterrupt, SystemExit):
                 self.logger.info('Shutdown!')
                 break
             except Exception as e:
                 self.logger.exception(e)
-                errorWait = 1
+                errorWait = 5
 
         self.logger.info("Stop Trading")
 
